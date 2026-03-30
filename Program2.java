@@ -1,72 +1,90 @@
-// Program 2: Matrix Class with Constructors, Transpose and Multiplication
+import java.util.LinkedList;
+import java.util.Queue;
 
-public class Matrix {
+// ──────────────────────────────────────────────────────────────
+// Q2: Producer–Consumer using Synchronization & Inter-thread
+//     Communication (wait / notify)
+// ──────────────────────────────────────────────────────────────
 
-    private int[][] data;
-    private int rows, cols;
+class SharedBuffer {
+    private final Queue<Integer> queue = new LinkedList<>();
+    private final int CAPACITY = 5;
 
-    // Constructor 1: empty matrix of given size
-    Matrix(int rows, int cols) {
-        this.rows = rows;
-        this.cols = cols;
-        this.data = new int[rows][cols];
+    // Producer calls this
+    public synchronized void produce(int item) throws InterruptedException {
+        while (queue.size() == CAPACITY) {
+            System.out.println("[Producer] Buffer full. Waiting…");
+            wait();                          // release lock, wait for space
+        }
+        queue.add(item);
+        System.out.println("[Producer] Produced: " + item
+                + "  | Buffer size: " + queue.size());
+        notifyAll();                         // wake up consumer(s)
     }
 
-    // Constructor 2: from 2D array
-    Matrix(int[][] data) {
-        this.rows = data.length;
-        this.cols = data[0].length;
-        this.data = data;
+    // Consumer calls this
+    public synchronized int consume() throws InterruptedException {
+        while (queue.isEmpty()) {
+            System.out.println("[Consumer] Buffer empty. Waiting…");
+            wait();                          // release lock, wait for item
+        }
+        int item = queue.poll();
+        System.out.println("[Consumer] Consumed: " + item
+                + "  | Buffer size: " + queue.size());
+        notifyAll();                         // wake up producer(s)
+        return item;
     }
+}
 
-    // Display the matrix
-    public void display() {
-        for (int[] row : data) {
-            for (int val : row)
-                System.out.printf("%4d", val);
-            System.out.println();
+class Producer implements Runnable {
+    private final SharedBuffer buffer;
+
+    Producer(SharedBuffer buffer) { this.buffer = buffer; }
+
+    @Override
+    public void run() {
+        for (int i = 1; i <= 10; i++) {
+            try {
+                buffer.produce(i);
+                Thread.sleep(300);           // simulate production delay
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
+}
 
-    // Transpose: swap rows and columns
-    public Matrix transpose() {
-        Matrix result = new Matrix(cols, rows);
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                result.data[j][i] = data[i][j];
-        return result;
+class Consumer implements Runnable {
+    private final SharedBuffer buffer;
+
+    Consumer(SharedBuffer buffer) { this.buffer = buffer; }
+
+    @Override
+    public void run() {
+        for (int i = 0; i < 10; i++) {
+            try {
+                buffer.consume();
+                Thread.sleep(500);           // consume slower than produce
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
+}
 
-    // Multiply this matrix with another
-    public Matrix multiply(Matrix other) {
-        if (this.cols != other.rows)
-            throw new IllegalArgumentException("Incompatible matrix sizes for multiplication.");
+public class Q2_ProducerConsumer {
+    public static void main(String[] args) throws InterruptedException {
+        SharedBuffer buffer = new SharedBuffer();
 
-        Matrix result = new Matrix(this.rows, other.cols);
-        for (int i = 0; i < this.rows; i++)
-            for (int j = 0; j < other.cols; j++)
-                for (int k = 0; k < this.cols; k++)
-                    result.data[i][j] += this.data[i][k] * other.data[k][j];
-        return result;
-    }
+        Thread producer = new Thread(new Producer(buffer), "Producer");
+        Thread consumer = new Thread(new Consumer(buffer), "Consumer");
 
-    public static void main(String[] args) {
-        int[][] a = {{1, 2, 3}, {4, 5, 6}};
-        int[][] b = {{7, 8}, {9, 10}, {11, 12}};
+        producer.start();
+        consumer.start();
 
-        Matrix matA = new Matrix(a);
-        Matrix matB = new Matrix(b);
+        producer.join();
+        consumer.join();
 
-        System.out.println("Matrix A (2x3):");
-        matA.display();
-
-        System.out.println("\nTranspose of A (3x2):");
-        matA.transpose().display();
-
-        System.out.println("\nMatrix B (3x2):");
-        matB.display();
-
-        System.out.println("\nA x B (2x2):");
-        matA.multiply(matB).display();
+        System.out.println("\nAll items produced and consumed successfully.");
     }
 }
