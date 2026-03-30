@@ -1,121 +1,97 @@
-// Program 1: Array and String Operations using Class and Objects
+import java.util.*;
+import java.util.concurrent.*;
 
-import java.util.Arrays;
+// ─────────────────────────────────────────────
+// Q1: Find Prime Numbers using Multithreading
+//     (Thread, Runnable, Executor Framework)
+// ─────────────────────────────────────────────
 
-class ArrayOps {
-    private int[] arr;
-
-    ArrayOps(int[] arr) {
-        this.arr = arr.clone();
-    }
-
-    // Reverse the array
-    public int[] reverse() {
-        int[] rev = arr.clone();
-        int n = rev.length;
-        for (int i = 0; i < n / 2; i++) {
-            int temp = rev[i];
-            rev[i] = rev[n - 1 - i];
-            rev[n - 1 - i] = temp;
-        }
-        return rev;
-    }
-
-    // Sort the array (ascending)
-    public int[] sort() {
-        int[] sorted = arr.clone();
-        Arrays.sort(sorted);
-        return sorted;
-    }
-
-    // Linear search: returns index or -1
-    public int search(int key) {
-        for (int i = 0; i < arr.length; i++)
-            if (arr[i] == key) return i;
-        return -1;
-    }
-
-    // Average of elements
-    public double average() {
-        double sum = 0;
-        for (int x : arr) sum += x;
-        return sum / arr.length;
-    }
-
-    // Maximum element
-    public int maximum() {
-        int max = arr[0];
-        for (int x : arr) if (x > max) max = x;
-        return max;
-    }
-
-    public void display() {
-        System.out.println(Arrays.toString(arr));
+// ── Helper ──────────────────────────────────
+class PrimeUtils {
+    static boolean isPrime(int n) {
+        if (n < 2) return false;
+        for (int i = 2; i <= Math.sqrt(n); i++)
+            if (n % i == 0) return false;
+        return true;
     }
 }
 
-class StringOps {
-    private String str;
+// ── Approach 1: extends Thread ───────────────
+class PrimeThread extends Thread {
+    private final int start, end;
 
-    StringOps(String str) {
-        this.str = str;
+    PrimeThread(int start, int end) {
+        this.start = start;
+        this.end   = end;
     }
 
-    // Reverse the string
-    public String reverse() {
-        return new StringBuilder(str).reverse().toString();
-    }
-
-    // Sort characters alphabetically
-    public String sort() {
-        char[] ch = str.toCharArray();
-        Arrays.sort(ch);
-        return new String(ch);
-    }
-
-    // Search for a character; returns index or -1
-    public int search(char key) {
-        return str.indexOf(key);
-    }
-
-    // Average ASCII value of characters
-    public double average() {
-        double sum = 0;
-        for (char c : str.toCharArray()) sum += c;
-        return sum / str.length();
-    }
-
-    // Character with maximum ASCII value
-    public char maximum() {
-        char max = str.charAt(0);
-        for (char c : str.toCharArray()) if (c > max) max = c;
-        return max;
+    @Override
+    public void run() {
+        System.out.print("[Thread] Primes in [" + start + "–" + end + "]: ");
+        for (int i = start; i <= end; i++)
+            if (PrimeUtils.isPrime(i)) System.out.print(i + " ");
+        System.out.println();
     }
 }
 
-public class ArrayStringOps {
-    public static void main(String[] args) {
-        // --- Array Operations ---
-        System.out.println("===== Array Operations =====");
-        int[] data = {5, 3, 8, 1, 9, 2};
-        ArrayOps ao = new ArrayOps(data);
+// ── Approach 2: implements Runnable ──────────
+class PrimeRunnable implements Runnable {
+    private final int start, end;
 
-        System.out.print("Original  : "); ao.display();
-        System.out.println("Reversed  : " + Arrays.toString(ao.reverse()));
-        System.out.println("Sorted    : " + Arrays.toString(ao.sort()));
-        System.out.println("Search(8) : index " + ao.search(8));
-        System.out.println("Average   : " + ao.average());
-        System.out.println("Maximum   : " + ao.maximum());
+    PrimeRunnable(int start, int end) {
+        this.start = start;
+        this.end   = end;
+    }
 
-        // --- String Operations ---
-        System.out.println("\n===== String Operations =====");
-        StringOps so = new StringOps("hello");
+    @Override
+    public void run() {
+        System.out.print("[Runnable] Primes in [" + start + "–" + end + "]: ");
+        for (int i = start; i <= end; i++)
+            if (PrimeUtils.isPrime(i)) System.out.print(i + " ");
+        System.out.println();
+    }
+}
 
-        System.out.println("Original  : hello");
-        System.out.println("Reversed  : " + so.reverse());
-        System.out.println("Sorted    : " + so.sort());
-        System.out.println("Search(l) : index " + so.search('l'));
-        System.out.printf ("Average   : %.2f%n", so.average());
-        System.out.println("Maximum   : " + so.maximum());
+// ── Approach 3: Executor Framework ───────────
+class PrimeTask implements Runnable {
+    private final int start, end;
+
+    PrimeTask(int start, int end) {
+        this.start = start;
+        this.end   = end;
+    }
+
+    @Override
+    public void run() {
+        System.out.print("[Executor:" + Thread.currentThread().getName() + "] "
+                + "Primes in [" + start + "–" + end + "]: ");
+        for (int i = start; i <= end; i++)
+            if (PrimeUtils.isPrime(i)) System.out.print(i + " ");
+        System.out.println();
+    }
+}
+
+public class Q1_PrimeMultithreading {
+    public static void main(String[] args) throws InterruptedException {
+
+        System.out.println("=== Approach 1: extends Thread ===");
+        PrimeThread t1 = new PrimeThread(1, 50);
+        PrimeThread t2 = new PrimeThread(51, 100);
+        t1.start(); t2.start();
+        t1.join();  t2.join();
+
+        System.out.println("\n=== Approach 2: implements Runnable ===");
+        Thread r1 = new Thread(new PrimeRunnable(1, 50));
+        Thread r2 = new Thread(new PrimeRunnable(51, 100));
+        r1.start(); r2.start();
+        r1.join();  r2.join();
+
+        System.out.println("\n=== Approach 3: Executor Framework ===");
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        executor.submit(new PrimeTask(1,   33));
+        executor.submit(new PrimeTask(34,  66));
+        executor.submit(new PrimeTask(67, 100));
+        executor.shutdown();
+        executor.awaitTermination(10, TimeUnit.SECONDS);
     }
 }
