@@ -1,79 +1,103 @@
-// Program 3: Wrapper Classes and String vs StringBuffer
+import java.util.*;
 
-public class WrapperAndString {
+// ──────────────────────────────────────────────────────────────
+// Q3: CRUD Operations using Collection API
+//     (ArrayList, HashMap, TreeMap)
+// ──────────────────────────────────────────────────────────────
+
+public class Q3_CollectionCRUD {
+
+    // ── 1. ArrayList CRUD ─────────────────────────────────────
+    static void arrayListDemo() {
+        System.out.println("\n===== ArrayList CRUD =====");
+        List<String> list = new ArrayList<>();
+
+        // Create
+        list.add("Alice");
+        list.add("Bob");
+        list.add("Charlie");
+        System.out.println("After Insert : " + list);
+
+        // Read
+        System.out.println("Element at 1 : " + list.get(1));
+
+        // Update
+        list.set(1, "Benjamin");
+        System.out.println("After Update : " + list);
+
+        // Delete
+        list.remove("Charlie");
+        System.out.println("After Delete : " + list);
+
+        // Iterate
+        System.out.print("Iterate      : ");
+        for (String s : list) System.out.print(s + " ");
+        System.out.println();
+    }
+
+    // ── 2. HashMap CRUD ───────────────────────────────────────
+    static void hashMapDemo() {
+        System.out.println("\n===== HashMap CRUD =====");
+        Map<Integer, String> map = new HashMap<>();
+
+        // Create
+        map.put(1, "Apple");
+        map.put(2, "Banana");
+        map.put(3, "Cherry");
+        System.out.println("After Insert : " + map);
+
+        // Read
+        System.out.println("Key 2        : " + map.get(2));
+
+        // Update
+        map.put(2, "Blueberry");
+        System.out.println("After Update : " + map);
+
+        // Delete
+        map.remove(3);
+        System.out.println("After Delete : " + map);
+
+        // Check existence
+        System.out.println("ContainsKey 1: " + map.containsKey(1));
+
+        // Iterate entries
+        System.out.println("Iterate      :");
+        for (Map.Entry<Integer, String> e : map.entrySet())
+            System.out.println("  " + e.getKey() + " -> " + e.getValue());
+    }
+
+    // ── 3. TreeMap CRUD (sorted by key) ──────────────────────
+    static void treeMapDemo() {
+        System.out.println("\n===== TreeMap CRUD (sorted) =====");
+        Map<String, Integer> tmap = new TreeMap<>();
+
+        // Create
+        tmap.put("Mango",    3);
+        tmap.put("Apple",    7);
+        tmap.put("Banana",   2);
+        tmap.put("Cherry",   5);
+        System.out.println("After Insert (sorted): " + tmap);
+
+        // Read
+        System.out.println("Key 'Banana' : " + tmap.get("Banana"));
+
+        // Update
+        tmap.put("Banana", 10);
+        System.out.println("After Update : " + tmap);
+
+        // Delete
+        tmap.remove("Mango");
+        System.out.println("After Delete : " + tmap);
+
+        // First / Last (TreeMap-specific)
+        TreeMap<String, Integer> sorted = (TreeMap<String, Integer>) tmap;
+        System.out.println("First key    : " + sorted.firstKey());
+        System.out.println("Last key     : " + sorted.lastKey());
+    }
 
     public static void main(String[] args) {
-
-        // ===== WRAPPER CLASSES =====
-        System.out.println("===== Wrapper Classes =====");
-
-        // Auto-boxing: primitive → object
-        int primitiveInt = 42;
-        Integer wrappedInt = primitiveInt;          // auto-boxing
-        double primitiveDouble = 3.14;
-        Double wrappedDouble = primitiveDouble;
-
-        System.out.println("Boxed int    : " + wrappedInt);
-        System.out.println("Boxed double : " + wrappedDouble);
-
-        // Unboxing: object → primitive
-        int unboxed = wrappedInt;                  // auto-unboxing
-        System.out.println("Unboxed int  : " + unboxed);
-
-        // Parsing strings to primitives
-        int parsed   = Integer.parseInt("123");
-        double dParsed = Double.parseDouble("9.81");
-        boolean bParsed = Boolean.parseBoolean("true");
-        System.out.println("Parsed int   : " + parsed);
-        System.out.println("Parsed double: " + dParsed);
-        System.out.println("Parsed bool  : " + bParsed);
-
-        // Useful Wrapper constants and methods
-        System.out.println("Max int      : " + Integer.MAX_VALUE);
-        System.out.println("Min int      : " + Integer.MIN_VALUE);
-        System.out.println("Binary of 10 : " + Integer.toBinaryString(10));
-        System.out.println("Hex of 255   : " + Integer.toHexString(255));
-
-        // Character wrapper
-        char ch = 'A';
-        System.out.println("isLetter     : " + Character.isLetter(ch));
-        System.out.println("isDigit      : " + Character.isDigit(ch));
-        System.out.println("toLowerCase  : " + Character.toLowerCase(ch));
-
-        // ===== STRING vs StringBuffer =====
-        System.out.println("\n===== String vs StringBuffer =====");
-
-        // String: immutable
-        String s = "Hello";
-        System.out.println("String before concat  : " + s);
-        s = s + " World";   // creates a new object; original "Hello" is unchanged
-        System.out.println("String after concat   : " + s);
-
-        // StringBuffer: mutable, thread-safe
-        StringBuffer sb = new StringBuffer("Hello");
-        System.out.println("\nStringBuffer before   : " + sb);
-        sb.append(" World");          // modifies the SAME object
-        System.out.println("After append          : " + sb);
-        sb.insert(5, ",");
-        System.out.println("After insert at 5     : " + sb);
-        sb.delete(5, 6);
-        System.out.println("After delete(5,6)     : " + sb);
-        sb.reverse();
-        System.out.println("After reverse         : " + sb);
-        sb.replace(0, 5, "WORLD");
-        System.out.println("After replace(0,5)    : " + sb);
-
-        // Performance comparison
-        System.out.println("\n--- Performance Test: 50,000 concatenations ---");
-
-        long start = System.currentTimeMillis();
-        String str = "";
-        for (int i = 0; i < 50000; i++) str += "a";
-        System.out.println("String time     : " + (System.currentTimeMillis() - start) + " ms");
-
-        start = System.currentTimeMillis();
-        StringBuffer sbPerf = new StringBuffer();
-        for (int i = 0; i < 50000; i++) sbPerf.append("a");
-        System.out.println("StringBuffer time: " + (System.currentTimeMillis() - start) + " ms");
+        arrayListDemo();
+        hashMapDemo();
+        treeMapDemo();
     }
 }
