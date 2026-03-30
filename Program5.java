@@ -1,130 +1,73 @@
-// Program 5: Inheritance-based Cricket–Match System using Command Line Arguments
-// Usage: java P5_CricketMatch <Team1> <Team2> <Overs> <Score1> <Score2>
-// Example: java P5_CricketMatch India Australia 20 186 175
+import java.io.*;
+import java.util.*;
 
-public class CricketMatch {
+// ──────────────────────────────────────────────────────────────
+// Q5: Count Word Occurrences from a File using File Handling APIs
+// ──────────────────────────────────────────────────────────────
 
-    // Base class
-    static class Player {
-        String name;
-        String team;
+public class Q5_WordCount {
 
-        Player(String name, String team) {
-            this.name = name;
-            this.team = team;
+    // Creates a sample text file to work with
+    static void createSampleFile(String path) throws IOException {
+        String content = """
+                Java is a programming language.
+                Java is platform independent.
+                Java supports multithreading and Java is object oriented.
+                File handling in Java is done using Java IO API.
+                """;
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+            writer.write(content);
         }
-
-        public void display() {
-            System.out.println("Player: " + name + " | Team: " + team);
-        }
+        System.out.println("Sample file created: " + path);
     }
 
-    // Batsman extends Player
-    static class Batsman extends Player {
-        int runs;
-        int ballsFaced;
+    // Reads file and counts word occurrences (case-insensitive)
+    static Map<String, Integer> countWords(String path) throws IOException {
+        Map<String, Integer> wordCount = new TreeMap<>();   // sorted output
 
-        Batsman(String name, String team, int runs, int ballsFaced) {
-            super(name, team);
-            this.runs = runs;
-            this.ballsFaced = ballsFaced;
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Split on any non-letter character
+                String[] words = line.toLowerCase().split("[^a-zA-Z]+");
+                for (String word : words) {
+                    if (!word.isEmpty()) {
+                        wordCount.merge(word, 1, Integer::sum);
+                    }
+                }
+            }
         }
-
-        public double strikeRate() {
-            return (runs * 100.0) / ballsFaced;
-        }
-
-        @Override
-        public void display() {
-            System.out.printf("  Batsman  : %-15s | Team: %-10s | Runs: %3d | SR: %.2f%n",
-                    name, team, runs, strikeRate());
-        }
-    }
-
-    // Bowler extends Player
-    static class Bowler extends Player {
-        int wickets;
-        double oversBowled;
-        int runsConceded;
-
-        Bowler(String name, String team, int wickets, double oversBowled, int runsConceded) {
-            super(name, team);
-            this.wickets = wickets;
-            this.oversBowled = oversBowled;
-            this.runsConceded = runsConceded;
-        }
-
-        public double economy() {
-            return runsConceded / oversBowled;
-        }
-
-        @Override
-        public void display() {
-            System.out.printf("  Bowler   : %-15s | Team: %-10s | Wkts: %d | Eco: %.2f%n",
-                    name, team, wickets, economy());
-        }
-    }
-
-    // Match class
-    static class Match {
-        String team1, team2;
-        int overs, score1, score2;
-
-        Match(String team1, String team2, int overs, int score1, int score2) {
-            this.team1  = team1;
-            this.team2  = team2;
-            this.overs  = overs;
-            this.score1 = score1;
-            this.score2 = score2;
-        }
-
-        public void displayScorecard() {
-            System.out.println("\n========= SCORECARD =========");
-            System.out.printf("  %s  vs  %s%n", team1, team2);
-            System.out.println("  Format: T" + overs);
-            System.out.printf("  %-15s : %d runs%n", team1, score1);
-            System.out.printf("  %-15s : %d runs%n", team2, score2);
-        }
-
-        public void declareResult() {
-            System.out.println("\n========= RESULT ============");
-            if (score1 > score2)
-                System.out.printf("  🏆 %s wins by %d runs!%n", team1, score1 - score2);
-            else if (score2 > score1)
-                System.out.printf("  🏆 %s wins by %d runs!%n", team2, score2 - score1);
-            else
-                System.out.println("  🤝 It's a tie!");
-        }
+        return wordCount;
     }
 
     public static void main(String[] args) {
-        // Validate command line arguments
-        if (args.length < 5) {
-            System.out.println("Usage: java P5_CricketMatch <Team1> <Team2> <Overs> <Score1> <Score2>");
-            System.out.println("Example: java P5_CricketMatch India Australia 20 186 175");
-            return;
+        String filePath = "sample_words.txt";
+
+        try {
+            // Step 1 – create a demo file
+            createSampleFile(filePath);
+
+            // Step 2 – count words
+            Map<String, Integer> wordCount = countWords(filePath);
+
+            // Step 3 – display results
+            System.out.println("\nWord Occurrence Count:");
+            System.out.println("-".repeat(30));
+            System.out.printf("%-20s %s%n", "Word", "Count");
+            System.out.println("-".repeat(30));
+            wordCount.forEach((word, count) ->
+                    System.out.printf("%-20s %d%n", word, count));
+
+            // Step 4 – find the most frequent word
+            Optional<Map.Entry<String, Integer>> maxEntry =
+                    wordCount.entrySet().stream()
+                             .max(Map.Entry.comparingByValue());
+            maxEntry.ifPresent(e ->
+                    System.out.println("\nMost frequent word: \""
+                            + e.getKey() + "\" (" + e.getValue() + " times)"));
+
+        } catch (IOException e) {
+            System.err.println("File error: " + e.getMessage());
         }
-
-        String team1  = args[0];
-        String team2  = args[1];
-        int overs     = Integer.parseInt(args[2]);
-        int score1    = Integer.parseInt(args[3]);
-        int score2    = Integer.parseInt(args[4]);
-
-        Match match = new Match(team1, team2, overs, score1, score2);
-        match.displayScorecard();
-        match.declareResult();
-
-        // Sample players
-        System.out.println("\n========= PLAYERS ===========");
-        Batsman b1 = new Batsman("Virat Kohli",   team1, 82, 55);
-        Batsman b2 = new Batsman("David Warner",  team2, 63, 45);
-        Bowler  w1 = new Bowler ("Bumrah",        team1, 3, 4.0, 28);
-        Bowler  w2 = new Bowler ("Pat Cummins",   team2, 2, 4.0, 35);
-
-        b1.display();
-        b2.display();
-        w1.display();
-        w2.display();
     }
 }
