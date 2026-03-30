@@ -1,100 +1,126 @@
-// Program 7: Inner Classes — Member, Local, and Anonymous
+// ──────────────────────────────────────────────────────────────
+// Q7: TCP Echo Client–Server Program
+//
+// HOW TO RUN:
+//   Terminal 1:  java Q7_TCPEchoServer
+//   Terminal 2:  java Q7_TCPEchoClientServer   (runs client automatically)
+//
+// Both classes are in this file for convenience.
+// In practice, compile and run each separately.
+// ──────────────────────────────────────────────────────────────
 
-public class Program7 {
+import java.io.*;
+import java.net.*;
 
-    private String outerField = "Outer Field";
+// ── Server ────────────────────────────────────────────────────
+class EchoServer implements Runnable {
+    private final int port;
 
-    // =============================================
-    // 1. MEMBER INNER CLASS
-    //    Declared directly inside the outer class.
-    //    Has access to all outer class members.
-    // =============================================
-    class MemberInner {
-        private String innerField = "Member Inner Field";
+    EchoServer(int port) { this.port = port; }
 
-        public void display() {
-            System.out.println("  [MemberInner] outerField = " + outerField);
-            System.out.println("  [MemberInner] innerField = " + innerField);
-        }
-    }
+    @Override
+    public void run() {
+        System.out.println("[Server] Starting on port " + port + "…");
 
-    // =============================================
-    // 2. STATIC NESTED CLASS
-    //    Like a member class but static — does NOT
-    //    hold a reference to an outer instance.
-    // =============================================
-    static class StaticNested {
-        public void display() {
-            System.out.println("  [StaticNested] I am a static nested class.");
-            System.out.println("  [StaticNested] Cannot access outerField directly.");
-        }
-    }
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("[Server] Waiting for client…");
 
-    // =============================================
-    // Helper interface used by local & anonymous
-    // =============================================
-    interface Greeting {
-        void greet(String name);
-    }
+            // Accept one client at a time (loop for multiple clients)
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("[Server] Client connected: "
+                        + clientSocket.getInetAddress());
 
-    // Method demonstrating LOCAL INNER CLASS
-    public void localClassDemo() {
-
-        // =============================================
-        // 3. LOCAL INNER CLASS
-        //    Defined inside a method. Scope is limited
-        //    to that method only.
-        // =============================================
-        class LocalGreeting implements Greeting {
-            @Override
-            public void greet(String name) {
-                System.out.println("  [LocalClass] Hello, " + name + "! (from local class)");
+                // Handle client in a new thread so server stays responsive
+                new Thread(() -> handleClient(clientSocket)).start();
             }
+        } catch (IOException e) {
+            System.out.println("[Server] Stopped: " + e.getMessage());
         }
-
-        Greeting lg = new LocalGreeting();
-        lg.greet("Alice");
     }
 
-    // Method demonstrating ANONYMOUS INNER CLASS
-    public void anonymousClassDemo() {
-
-        // =============================================
-        // 4. ANONYMOUS INNER CLASS
-        //    A one-time class with no name, defined
-        //    and instantiated at the same time.
-        // =============================================
-        Greeting ag = new Greeting() {
-            @Override
-            public void greet(String name) {
-                System.out.println("  [AnonymousClass] Hi, " + name + "! (from anonymous class)");
+    private void handleClient(Socket socket) {
+        try (
+            BufferedReader  in  = new BufferedReader(
+                                    new InputStreamReader(socket.getInputStream()));
+            PrintWriter     out = new PrintWriter(socket.getOutputStream(), true)
+        ) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                System.out.println("[Server] Received : " + line);
+                if (line.equalsIgnoreCase("bye")) {
+                    out.println("Goodbye!");
+                    break;
+                }
+                out.println("Echo: " + line);   // echo back
             }
-        };
+        } catch (IOException e) {
+            System.out.println("[Server] Client error: " + e.getMessage());
+        } finally {
+            try { socket.close(); } catch (IOException ignored) {}
+            System.out.println("[Server] Client disconnected.");
+        }
+    }
+}
 
-        ag.greet("Bob");
+// ── Client ────────────────────────────────────────────────────
+class EchoClient {
+    private final String host;
+    private final int    port;
+
+    EchoClient(String host, int port) {
+        this.host = host;
+        this.port = port;
     }
 
-    public static void main(String[] args) {
-        P7_InnerClasses outer = new P7_InnerClasses();
+    void start() {
+        System.out.println("[Client] Connecting to " + host + ":" + port);
 
-        System.out.println("===== 1. Member Inner Class =====");
-        P7_InnerClasses.MemberInner member = outer.new MemberInner();
-        member.display();
+        try (
+            Socket         socket = new Socket(host, port);
+            BufferedReader in     = new BufferedReader(
+                                     new InputStreamReader(socket.getInputStream()));
+            PrintWriter    out    = new PrintWriter(socket.getOutputStream(), true)
+        ) {
+            System.out.println("[Client] Connected!\n");
 
-        System.out.println("\n===== 2. Static Nested Class =====");
-        P7_InnerClasses.StaticNested staticNested = new P7_InnerClasses.StaticNested();
-        staticNested.display();
+            String[] messages = {"Hello", "How are you?", "Java is fun!", "bye"};
 
-        System.out.println("\n===== 3. Local Inner Class =====");
-        outer.localClassDemo();
+            for (String msg : messages) {
+                System.out.println("[Client] Sending  : " + msg);
+                out.println(msg);
 
-        System.out.println("\n===== 4. Anonymous Inner Class =====");
-        outer.anonymousClassDemo();
+                String response = in.readLine();
+                System.out.println("[Client] Received : " + response);
+                System.out.println();
 
-        // Lambda expression (modern alternative to anonymous class for functional interfaces)
-        System.out.println("\n===== 5. Lambda (modern anonymous) =====");
-        Greeting lambda = name ->
-            System.out.println("  [Lambda] Hey, " + name + "! (from lambda expression)");
-        lambda.greet("Charlie");
+                Thread.sleep(300);             // small delay for readability
+
+                if (msg.equalsIgnoreCase("bye")) break;
+            }
+
+        } catch (IOException | InterruptedException e) {
+            System.out.println("[Client] Error: " + e.getMessage());
+        }
+    }
+}
+
+// ── Main ──────────────────────────────────────────────────────
+public class Q7_TCPEchoClientServer {
+    public static void main(String[] args) throws InterruptedException {
+        final int PORT = 9090;
+
+        // Start server in a background thread
+        Thread serverThread = new Thread(new EchoServer(PORT));
+        serverThread.setDaemon(true);          // exits when main exits
+        serverThread.start();
+
+        Thread.sleep(500);                     // give server time to bind
+
+        // Run client on main thread
+        EchoClient client = new EchoClient("localhost", PORT);
+        client.start();
+
+        System.out.println("[Main] Demo complete.");
     }
 }
