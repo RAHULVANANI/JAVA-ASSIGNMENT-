@@ -1,121 +1,96 @@
-// Program 6: Cipher System using Abstract Class and Method Overriding
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-public class CipherSystem {
+// ──────────────────────────────────────────────────────────────
+// Q6: Display All Files of a Given Directory using File class
+// ──────────────────────────────────────────────────────────────
 
-    // Abstract base class
-    abstract static class Cipher {
-        protected String name;
+public class Q6_DirectoryListing {
 
-        Cipher(String name) {
-            this.name = name;
+    static final SimpleDateFormat SDF =
+            new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+
+    // ── Flat listing of one directory ──────────────────────────
+    static void listDirectory(String path) {
+        File dir = new File(path);
+
+        if (!dir.exists()) {
+            System.out.println("Path does not exist: " + path);
+            return;
+        }
+        if (!dir.isDirectory()) {
+            System.out.println("Not a directory: " + path);
+            return;
         }
 
-        // Abstract methods to be overridden
-        public abstract String encrypt(String text);
-        public abstract String decrypt(String text);
+        System.out.println("\nListing: " + dir.getAbsolutePath());
+        System.out.println("=".repeat(70));
+        System.out.printf("%-5s %-40s %-12s %-8s %s%n",
+                "Type", "Name", "Size(bytes)", "Hidden", "Last Modified");
+        System.out.println("-".repeat(70));
 
-        // Concrete method shared by all ciphers
-        public void display(String original) {
-            String enc = encrypt(original);
-            String dec = decrypt(enc);
-            System.out.println("-- " + name + " --");
-            System.out.println("  Original  : " + original);
-            System.out.println("  Encrypted : " + enc);
-            System.out.println("  Decrypted : " + dec);
-            System.out.println();
+        File[] files = dir.listFiles();
+        if (files == null || files.length == 0) {
+            System.out.println("(Empty directory)");
+            return;
         }
+
+        for (File f : files) {
+            String type     = f.isDirectory() ? "[DIR]" : "[FILE]";
+            long   size     = f.isFile() ? f.length() : 0;
+            String hidden   = f.isHidden() ? "Yes" : "No";
+            String modified = SDF.format(new Date(f.lastModified()));
+            System.out.printf("%-5s %-40s %-12d %-8s %s%n",
+                    type, f.getName(), size, hidden, modified);
+        }
+
+        System.out.println("-".repeat(70));
+        System.out.println("Total entries: " + files.length);
     }
 
-    // 1. Caesar Cipher: shift each letter by 'key' positions
-    static class CaesarCipher extends Cipher {
-        private int shift;
+    // ── Recursive listing (files only) ────────────────────────
+    static void listRecursive(File dir, String indent) {
+        File[] entries = dir.listFiles();
+        if (entries == null) return;
 
-        CaesarCipher(int shift) {
-            super("Caesar Cipher (shift=" + shift + ")");
-            this.shift = shift;
-        }
-
-        @Override
-        public String encrypt(String text) {
-            StringBuilder sb = new StringBuilder();
-            for (char c : text.toCharArray()) {
-                if (Character.isLetter(c)) {
-                    char base = Character.isUpperCase(c) ? 'A' : 'a';
-                    sb.append((char) ((c - base + shift) % 26 + base));
-                } else {
-                    sb.append(c);
-                }
+        for (File f : entries) {
+            if (f.isDirectory()) {
+                System.out.println(indent + "📁 " + f.getName() + "/");
+                listRecursive(f, indent + "   ");
+            } else {
+                System.out.println(indent + "📄 " + f.getName()
+                        + " (" + f.length() + " bytes)");
             }
-            return sb.toString();
-        }
-
-        @Override
-        public String decrypt(String text) {
-            StringBuilder sb = new StringBuilder();
-            for (char c : text.toCharArray()) {
-                if (Character.isLetter(c)) {
-                    char base = Character.isUpperCase(c) ? 'A' : 'a';
-                    sb.append((char) ((c - base - shift + 26) % 26 + base));
-                } else {
-                    sb.append(c);
-                }
-            }
-            return sb.toString();
-        }
-    }
-
-    // 2. Reverse Cipher: simply reverses the string
-    static class ReverseCipher extends Cipher {
-
-        ReverseCipher() {
-            super("Reverse Cipher");
-        }
-
-        @Override
-        public String encrypt(String text) {
-            return new StringBuilder(text).reverse().toString();
-        }
-
-        @Override
-        public String decrypt(String text) {
-            return encrypt(text); // reversing twice gives the original
-        }
-    }
-
-    // 3. XOR Cipher: XOR each character with a key byte
-    static class XORCipher extends Cipher {
-        private int key;
-
-        XORCipher(int key) {
-            super("XOR Cipher (key=" + key + ")");
-            this.key = key;
-        }
-
-        @Override
-        public String encrypt(String text) {
-            StringBuilder sb = new StringBuilder();
-            for (char c : text.toCharArray())
-                sb.append((char) (c ^ key));
-            return sb.toString();
-        }
-
-        @Override
-        public String decrypt(String text) {
-            return encrypt(text); // XOR is its own inverse
         }
     }
 
     public static void main(String[] args) {
-        System.out.println("======= Cipher System =======\n");
-        String message = "Hello World";
+        // ── Change this to any valid path on your machine ──────
+        String targetPath = System.getProperty("user.dir");  // current directory
 
-        Cipher[] ciphers = {
-            new CaesarCipher(3),
-            new ReverseCipher(),
-            new XORCipher(7)
-        };
+        // Flat listing
+        listDirectory(targetPath);
 
-        for (Cipher c : ciphers)
-            c.display(message);
+        // Recursive tree view
+        System.out.println("\n── Recursive Tree View ──");
+        File root = new File(targetPath);
+        System.out.println("📁 " + root.getName() + "/");
+        listRecursive(root, "   ");
+
+        // ── Bonus: file statistics ─────────────────────────────
+        File dir = new File(targetPath);
+        File[] all = dir.listFiles();
+        if (all != null) {
+            long fileCount = 0, dirCount = 0, totalSize = 0;
+            for (File f : all) {
+                if (f.isDirectory()) dirCount++;
+                else { fileCount++; totalSize += f.length(); }
+            }
+            System.out.println("\n── Summary ──");
+            System.out.println("Files      : " + fileCount);
+            System.out.println("Directories: " + dirCount);
+            System.out.println("Total size : " + totalSize + " bytes");
+        }
     }
 }
